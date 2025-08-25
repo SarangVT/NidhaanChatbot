@@ -1,0 +1,28 @@
+uvicorn==0.24.0
+
+# Google Generative AI (Gemini)
+google-generativeai==0.3.2
+
+# Database
+mysql-connector-python==8.2.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# File Processing
+python-docx==1.1.0
+
+# Core Dependencies (usually auto-installed but good to specify)
+pydantic==2.5.0
+typing-extensions==4.8.0
+
+# Optional: For better logging and monitoring
+python-multipart==0.0.6
+
+# Optional: For enhanced security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Development Dependencies (optional)
+# pytest==7.4.3
+# pytest-asyncio==0.21.1

@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Professional Chatbot UI</title>
+  <style>
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      /*padding: 0;*/
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #ffffff;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Chat Toggle Button */
+    .chat-toggle-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #000;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chat-toggle-btn:hover {
+      background-color: #333;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Main Container */
+    .container {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 500px;
+      height: 600px;
+      background-color: #ffffff;
+      border: 2px solid #e0e0e0;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .container.open {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Chat Header */
+    .chat-header {
+      background-color: #f8f9fa;
+      padding: 16px;
+      text-align: center;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 1px solid #e0e0e0;
+      position: relative;
+    }
+
+    .chat-status {
+      position: absolute;
+      top: 50%;
+      right: 16px;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      background-color: #4caf50;
+      border-radius: 50%;
+    }
+
+    /* Chat Body */
+    .chat-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      max-width: 100%;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.assistant {
+      justify-content: flex-start;
+    }
+
+    .message-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      margin: 0 8px;
+      flex-shrink: 0;
+    }
+
+    .message.user .message-icon {
+      background-color: #000;
+      color: #fff;
+      order: 2;
+    }
+
+    .message.assistant .message-icon {
+      background-color: #f0f0f0;
+      color: #333;
+      order: 1;
+    }
+
+    .message-content {
+      max-width: 75%;
+      order: 1;
+    }
+
+    .message.user .message-content {
+      order: 1;
+    }
+
+    .message.assistant .message-content {
+      order: 2;
+    }
+
+    .message-text {
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      /*white-space: pre-wrap;*/
+    }
+
+    .message.user .message-text {
+      background-color: #000;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant .message-text {
+      background-color: #f0f0f0;
+      color: #333;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .message.assistant .message-time {
+      text-align: left;
+    }
+
+    /* File attachment in message */
+    .file-attachment {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .message.assistant .file-attachment {
+      background-color: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .file-attachment-name {
+      font-weight: 500;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Error message */
+    .error-message {
+      background-color: #ffebee;
+      border: 1px solid #ffcdd2;
+      color: #c62828;
+    }
+
+    /* Suggestions */
+    .suggestions {
+      padding: 8px 16px 16px;
+      display: flex;
+    
+      gap: 15px;
+    }
+
+    .suggestion-pill {
+      background-color: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      padding: 8px 22px;
+      border-radius: 20px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #666;
+    }
+
+    .suggestion-pill:hover {
+      background-color: #e9ecef;
+      border-color: #ccc;
+      transform: translateY(-1px);
+    }
+
+    /* Chat Input */
+    .chat-input {
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #e0e0e0;
+      gap: 8px;
+      flex-direction: column;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 8px;
+    }
+
+    /* File Preview */
+    .file-preview {
+      display: none;
+      background-color: #f0f0f0;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .file-preview.show {
+      display: flex;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .file-name {
+      color: #333;
+      font-weight: 500;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-remove {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #ff4444;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+    }
+
+    .file-remove:hover {
+      background-color: #cc0000;
+    }
+
+    .file-upload {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .file-upload input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .upload-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #000;
+      color: #fff;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .upload-btn:hover {
+      background-color: #333;
+    }
+
+    .message-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 24px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .message-input:focus {
+      border-color: #000;
+    }
+
+    .message-input::placeholder {
+      color: #999;
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #000;
+      color: #fff;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-size: 18px;
+    }
+
+    .send-btn:hover {
+      background-color: #333;
+    }
+
+    .send-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Thinking Animation */
+    .thinking {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .thinking-dots {
+      display: flex;
+      margin-left: 8px;
+    }
+
+    .thinking-dot {
+      width: 6px;
+      height: 6px;
+      background-color: #666;
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: thinking 1.4s infinite ease-in-out;
+    }
+
+    .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+    .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0; }
+
+    @keyframes thinking {
+      0%, 80%, 100% { 
+        transform: scale(0.8);
+        opacity: 0.5;
+      }
+      40% { 
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Scrollbar Styling */
+    .chat-body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .chat-body::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .chat-body::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 2px;
+    }
+
+    .chat-body::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+
+
+    /* Media Queries for Mobile Devices */
+@media (max-width: 768px) {
+  .container {
+    width: 90vw;
+    height: 90vh;
+    bottom: 70px;
+    right: 5%;
+  }
+
+  .chat-toggle-btn {
+    bottom: 16px;
+    right: 16px;
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .chat-body, .chat-input {
+    padding: 12px;
+  }
+
+  .suggestions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .suggestion-pill {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .message-text {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .upload-btn, .send-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .message-input {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .file-preview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .file-name {
+    max-width: 100%;
+  }
+}   
+      /* Tablet */
+@media (max-width: 768px) {
+  .suggestions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 0 12px 12px;
+  }
+
+  .suggestion-pill {
+    font-size: 12px;
+    padding: 6px 10px;
+    max-width: 100%;
+    word-break: break-word;
+    white-space: normal;
+  }
+}
+@media (max-width: 480px) {
+  .suggestions {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+  .suggestion-pill {
+    width: 100%;
+    text-align: center;
+  /* Add these styles for HTML content in messages */
+  .message-text p {
+    margin: 8px 0;
+    line-height: 1.4;
+  }
+
+  .message-text ul, .message-text ol {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+
+  .message-text li {
+    margin: 4px 0;
+  }
+
+  .message-text strong {
+    font-weight: 600;
+  }
+
+  .message-text a {
+    color: inherit;
+    text-decoration: underline;
+  }
+
+  .message.user .message-text a {
+    color: #ccc;
+  }
+
+  .message.assistant .message-text a {
+    color: #0066cc;
+  }
+}
+
+
+
+  </style>
+</head>
+<body>
+
+<!-- Chat Toggle Button -->
+<button class="chat-toggle-btn" onclick="toggleChat()" id="chatToggleBtn">
+  💬 Chat with Us
+</button>
+
+<div class="container" id="chatContainer">
+  <!-- Chat Header -->
+  <div class="chat-header">
+    AI Assistant
+    <div class="chat-status"></div>
+  </div>
+
+  <!-- Chat Body -->
+  <div class="chat-body" id="chatBody">
+    <div class="message assistant">
+      <div class="message-icon">🤖</div>
+      <div class="message-content">
+        <div class="message-text">Hey! How can I help you?</div>
+        <div class="message-time">Just now</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggestions -->
+  <div class="suggestions">
+    <div class="suggestion-pill" onclick="selectSuggestion('What services do you offer?')">Services</div>
+    <div class="suggestion-pill" onclick="selectSuggestion('How can I book an appointment?')">Appointments</div>
+    <div class="suggestion-pill" onclick="selectSuggestion('Tell me about your healthcare plans')">Plans</div>
+    <div class="suggestion-pill" onclick="selectSuggestion('Contact information')">Contact</div>
+  </div>
+
+  <!-- Chat Input -->
+  <div class="chat-input">
+    <!-- File Preview -->
+    <div class="file-preview" id="filePreview">
+      <div class="file-info">
+        <span>📄</span>
+        <span class="file-name" id="fileName"></span>
+      </div>
+      <button class="file-remove" onclick="removeFile()" title="Remove file">✕</button>
+    </div>
+    
+    <!-- Input Row -->
+    <div class="input-row">
+      <input type="text" id="messageInput" class="message-input" placeholder="Type your message..." />
+      <div class="file-upload">
+        <input type="file" id="fileInput" onchange="handleFileUpload(this.files)" accept="*/*" />
+        <div class="upload-btn">+</div>
+      </div>
+      <button class="send-btn" onclick="sendMessage()" id="sendBtn">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Configuration
+  const API_BASE_URL = 'http://localhost:8000';
+  
+  // State variables
+  let isThinking = false;
+  let uploadedFile = null;
+
+  function toggleChat() {
+    const container = document.getElementById("chatContainer");
+    const toggleBtn = document.getElementById("chatToggleBtn");
+    
+    if (container.classList.contains("open")) {
+      container.classList.remove("open");
+      toggleBtn.innerHTML = "💬 Chat with Us";
+    } else {
+      container.classList.add("open");
+      toggleBtn.innerHTML = "✕ Close Chat";
+    }
+  }
+
+  function formatTime(date) {
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) { // Less than 1 minute
+      return 'Just now';
+    } else if (diff < 3600000) { // Less than 1 hour
+      const minutes = Math.floor(diff / 60000);
+      return `${minutes} min ago`;
+    } else if (diff < 86400000) { // Less than 1 day
+      const hours = Math.floor(diff / 3600000);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  }
+
+  function addMessage(text, sender = "user", file = null, isError = false) {
+    const chatBody = document.getElementById("chatBody");
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message ${sender}`;
+    
+    const icon = sender === "user" ? "👨" : "🤖";
+    const timestamp = new Date();
+    
+    let messageContent = "";
+    
+    // If there's a file, show it first
+    if (file) {
+      messageContent += `
+        <div class="file-attachment">
+          <span>📄</span>
+          <span class="file-attachment-name">${file.name}</span>
+        </div>
+      `;
+    }
+    
+    // Add text if provided - properly handle string vs object
+    if (text) {
+      let textContent = '';
+
+      // Better parsing logic for API responses
+      if (typeof text === 'object') {
+        if (text.response?.answer) {
+          textContent = text.response.answer;
+        } else if (text.response) {
+          textContent = text.response;
+        } else if (text.answer) {
+          textContent = text.answer;
+        } else if (text.message) {
+          textContent = text.message;
+        } else if (text.data) {
+          textContent = text.data;
+        } else {
+          textContent = JSON.stringify(text, null, 2);
+        }
+      }
+      else {
+        textContent = String(text);
+      }
+
+      // Handle HTML content properly - don't escape it for assistant messages
+      if (sender === 'assistant') {
+        messageContent += textContent; // Allow HTML rendering
+      } else {
+        // Escape HTML for user messages for security
+        const div = document.createElement('div');
+        div.textContent = textContent;
+        messageContent += div.innerHTML;
+      }
+    }
+    
+    const textClass = isError ? 'message-text error-message' : 'message-text';
+    
+    messageDiv.innerHTML = `
+      <div class="message-icon">${icon}</div>
+      <div class="message-content">
+        <div class="${textClass}">${messageContent}</div>
+        <div class="message-time" data-timestamp="${timestamp.getTime()}">${formatTime(timestamp)}</div>
+      </div>
+    `;
+    
+    chatBody.appendChild(messageDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function selectSuggestion(text) {
+    const input = document.getElementById("messageInput");
+    input.value = text;
+    input.focus();
+  }
+
+  function handleFileUpload(files) {
+    if (files.length > 0) {
+      const file = files[0];
+      
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        addMessage("File too large. Maximum size is 10MB.", "assistant", null, true);
+        return;
+      }
+      
+      uploadedFile = file;
+      const fileName = file.name;
+      
+      // Show file preview
+      const filePreview = document.getElementById("filePreview");
+      const fileNameElement = document.getElementById("fileName");
+      
+      fileNameElement.textContent = fileName;
+      filePreview.classList.add("show");
+      
+      // Clear the file input
+      document.getElementById("fileInput").value = "";
+      
+      // Focus on message input
+      document.getElementById("messageInput").focus();
+    }
+  }
+
+  function removeFile() {
+    uploadedFile = null;
+    const filePreview = document.getElementById("filePreview");
+    filePreview.classList.remove("show");
+    
+    // Focus back on message input
+    document.getElementById("messageInput").focus();
+  }
+
+  async function callTextAPI(userInput) {
+    try {
+      console.log('Calling text API with:', userInput);
+      if (!userInput || userInput.trim() === "") {
+        console.error("Empty input, not calling API");
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/query/?user_input=${encodeURIComponent(userInput)}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('API Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
+  }
+
+  async function callFileAPI(file, userQuery = "") {
+    try {
+      console.log('Calling file API with:', file.name, 'Query:', userQuery);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      let url = `${API_BASE_URL}/upload/`;
+      if (userQuery.trim()) {
+        url += `?user_query=${encodeURIComponent(userQuery)}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      console.log('File API Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('File API Error Response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('File API Response:', data);
+      
+      // Return the response field from the API
+      return data.response || data.message || JSON.stringify(data);
+    } catch (error) {
+      console.error('File API Error:', error);
+      throw error;
+    }
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById("messageInput");
+    const text = input.value.trim();
+    
+    // Check if we have either text or file
+    if ((!text && !uploadedFile) || isThinking) return;
+
+    // Add user message to chat
+    addMessage(text, "user", uploadedFile);
+    
+    // Clear input and file
+    input.value = "";
+    const currentFile = uploadedFile;
+    if (uploadedFile) {
+      uploadedFile = null;
+      removeFile();
+    }
+
+    // Show thinking animation
+    showThinking();
+
+    try {
+      let response;
+      
+      // Determine which API to call
+      if (currentFile && text) {
+        // Both file and text - call file API with query
+        response = await callFileAPI(currentFile, text);
+      } else if (currentFile && !text) {
+        // Only file - call file API without query
+        response = await callFileAPI(currentFile);
+      } else if (!currentFile && text) {
+        // Only text - call text API
+        response = await callTextAPI(text);
+      }
+
+      hideThinking();
+      
+      // Make sure we have a valid response
+      if (response) {
+        addMessage(response, "assistant");
+      } else {
+        addMessage("I received your message but got an empty response. Please try again.", "assistant", null, true);
+      }
+      
+    } catch (error) {
+      hideThinking();
+      console.error('Error sending message:', error);
+      
+      // More specific error messages
+      let errorMessage = "Sorry, I'm having trouble connecting right now. ";
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage += "Please check if the API server is running on localhost:8000.";
+      } else if (error.message.includes('CORS')) {
+        errorMessage += "There's a CORS issue with the API connection.";
+      } else {
+        errorMessage += `Error: ${error.message}`;
+      }
+      
+      addMessage(errorMessage, "assistant", null, true);
+    }
+  }
+
+  function showThinking() {
+    if (isThinking) return;
+    
+    isThinking = true;
+    const chatBody = document.getElementById("chatBody");
+    const sendBtn = document.getElementById("sendBtn");
+    
+    const thinkingDiv = document.createElement("div");
+    thinkingDiv.className = "message assistant";
+    thinkingDiv.id = "thinkingMessage";
+    thinkingDiv.innerHTML = `
+      <div class="message-icon">🤖</div>
+      <div class="message-content">
+        <div class="thinking">
+          AI is thinking
+          <div class="thinking-dots">
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    chatBody.appendChild(thinkingDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    sendBtn.disabled = true;
+  }
+
+  function hideThinking() {
+    const thinkingMessage = document.getElementById("thinkingMessage");
+    const sendBtn = document.getElementById("sendBtn");
+    
+    if (thinkingMessage) {
+      thinkingMessage.remove();
+    }
+    
+    isThinking = false;
+    sendBtn.disabled = false;
+  }
+
+
+  // Function to clear chat history when page closes or refreshes
+  async function clearChatHistory() {
+    try {
+      await fetch(`${API_BASE_URL}/clear-history/`, {
+        method: 'GET',
+      });
+      console.log('Chat history cleared');
+    } catch (error) {
+      console.error('Error clearing chat history:', error);
+    }
+  }
+  // Handle Enter key press
+  document.getElementById("messageInput").addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Handle input changes to enable/disable send button
+  document.getElementById("messageInput").addEventListener("input", function() {
+    const sendBtn = document.getElementById("sendBtn");
+    const hasText = this.value.trim().length > 0;
+    const hasFile = uploadedFile !== null;
+    
+    // Enable send button if we have text or file
+    sendBtn.style.opacity = (hasText || hasFile) ? "1" : "0.5";
+  });
+
+  // Update message timestamps periodically
+  setInterval(() => {
+    const messageTimes = document.querySelectorAll('.message-time');
+    messageTimes.forEach(timeElement => {
+      if (timeElement.dataset.timestamp) {
+        const timestamp = new Date(parseInt(timeElement.dataset.timestamp));
+        timeElement.textContent = formatTime(timestamp);
+      }
+    });
+  }, 60000); // Update every minute
+
+  // Test API connection on page load
+  window.addEventListener('load', async () => {
+  // Clear chat history first
+    await clearChatHistory();
+  // Then test API connection
+    try {
+      const response = await fetch(`${API_BASE_URL}/health`);
+      if (response.ok) {
+        console.log(' API connection successful');
+      } else {
+        console.warn(' API health check failed');
+      }
+    } catch (error) {
+      console.error(' API connection failed:', error);
+    }
+  });
+  // Clear chat history when page is about to unload (close/refresh)
+  window.addEventListener('beforeunload', function(e) {
+    navigator.sendBeacon(`${API_BASE_URL}/clear-history/`);
+  });
+
+  // Clear chat history when page loads (in case of refresh)
+  window.addEventListener('load', function() {
+    clearChatHistory();
+  });
+
+  // Also clear on page visibility change (when tab becomes hidden)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+      navigator.sendBeacon(`${API_BASE_URL}/clear-history/`);
+    }
+  });
+</script>
+
+</body>
+</html>
